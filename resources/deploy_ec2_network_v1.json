@@ -15,7 +15,7 @@
   "Mappings": {
     "RegionMap": {
       "eu-west-2": {
-        "micro": "ami-0020113153631385b"
+        "micro": "ami-0624e059948335d02"
       }
     }
   },
@@ -39,8 +39,7 @@
               "Fn::Join": [
                 ",",
                 [
-                  "My",
-                  "EC2 for ",
+                  "My EC2 for ",
                   { "Ref": "AWS::Region" },
                   " and for stack ",
                   { "Ref": "AWS::StackName" }

@@ -39,17 +39,10 @@ You will need to add your bucket name to the template before uploading it.
    new server.
 5. SSH into your server using the `.pem` key you downloaded in step one. The
    username will be `ec2-user`.
-6. Set up Jenkins, according to [the instructions in the official guide to
-   Installing and Configuring
-   Jenkins](https://www.jenkins.io/doc/tutorials/tutorial-for-installing-jenkins-on-AWS/#installing-and-configuring-jenkins). This will include:
-   1. SSHing into your server (you've already done this)
-   2. Adding the link to the Jenkins repository to the `yum` package manager.
-   3. Installing Java (you're using Amazon Linux 2).
-   4. Installing Jenkins.
-   5. Starting Jenkins (this can take a few seconds).
-   6. Configuring Jenkins with an admin user.
-   7. Installing the suggested plugins.
-7. **You do not need to configure a cloud or install the EC2 Plugin.**
+6. The EC2 provided has Jenkins running.
+- SSH into your server (you've already done this in week 1)
+- You can check Jenkins is installed and running with this command sudo systemctl status jenkins
+
 
 ## Check your work
 
