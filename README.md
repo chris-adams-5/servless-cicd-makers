@@ -1,5 +1,35 @@
 # Serverless CI-CD
 
+
+Forking the Repository
+You will have to push changes to Github in order to trigger the CI/CD pipeline. Therefore, before going any further in this tutorial, fork this repository and work on your own fork from now on. If you have never forked a repository, this might help.
+
+Preparing the Deployment Environment
+The simplest way to get a container running on AWS is to use Fargate, so we will use a sample Fargate deployment which takes care of everything for us: VPC, SGs, IAM and the cluster itself.
+
+NOTE: Fargate is only available on the us-east-1 region at the time of writing, so we will use this region.
+
+Perform the following steps to prepare the Fargate environment for our deployment:
+
+Log in to the ECS console under the us-east-1 region (or simply click here).
+Click Get Started.
+Under Container definition, leave the sample-app option selected and click Next.
+Under Load balancer type choose Application Load Balancer and click Next.
+If you want, change the name of the cluster under Cluster name. Click Next.
+Click Create.
+The cluster should now be created along with all required resources. A sample app will be automatically deployed on the cluster once created (this could take a few minutes).
+
+Verify that the sample app works by browsing the DNS name of the load balancer. To find the DNS name you can click the link near Load balancer in the cluster creation status page, or find the load balancer in the Load Balancers view.
+
+Prepare a Docker Repository on ECR
+The pipeline you are about to create will generate Docker images, which need to be pushed to some Docker registry. Since we are on AWS we can easily use ECR for this purpose, however you may use other Docker registries as well.
+
+To create a repository on ECR, follow these steps:
+
+On the Repositories section on the ECS console, click Get started or Create repository.
+Under Repository name type "sample-app" and click Next step then Done.
+Make note of the Repository URI - you will need it later.
+
 This repository provides a skeleton with some files in order for you to get
 started creating:
 
@@ -20,12 +50,9 @@ On this page you will find:
 
 ## Desired application and deployment process
 
-Below, you fill find some diagrams that describe the system you have been asked
-to build in a bit more detail. 
+Below, you fill find some diagrams that describe the system you have been asked to build in a bit more detail. 
 
-Even so, you'll find that they leave some questions unanswered: some arrows have
-been left unlabelled and the inner workings of some of the tools involved are
-not explained. The missing bits are for you to research and discover!
+Even so, you'll find that they leave some questions unanswered: some arrows have been left unlabelled and the inner workings of some of the tools involved are not explained. The missing bits are for you to research and discover!
 
 ### Application diagram
 
@@ -63,7 +90,7 @@ Your coach may also ask you to discuss your diagrams during group check-ins.
 
 ### Tasks
 
-1. [Set up S3](01_set_up_s3.md)
+1. [Set up Deployment Environment](01_set_up_ecs_and_fargate.md)
 2. [Set up Jenkins](02_set_up_jenkins.md)
 3. [Set up a CI-CD pipeline in Jenkins](03_set_up_pipeline.md)
 4. [Set up the Serverless backend](04_set_up_serverless.md)
@@ -72,9 +99,8 @@ Your coach may also ask you to discuss your diagrams during group check-ins.
 
 ## Project files
 
-- In the `template` folder you will find some files for a website. These are the
-  files we will deploy for our static website on an AWS S3 Bucket.
-- `resources/deploy_ec2_network_v1.json` is the
+- In the `app` folder you will find the files for a the application. These are the app files will be  containerised and deploy to fargate.
+- `resources/deploy_ec2_network_v2.json` is the
   [CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html)
   template to automate the process of creating an EC2 instance on AWS, assign
   the necessary roles and policies and add some security settings that are

@@ -9,26 +9,28 @@
     "InstanceType": {
       "Type": "String",
       "AllowedValues": ["t2.micro", "t2.small", "t2.medium"],
+      "Default": "t2.medium",
       "Description": "Select the Instance Type"
     }
   },
   "Mappings": {
     "RegionMap": {
       "eu-west-2": {
-        "micro": "ami-0624e059948335d02"
+        "micro": "ami-0852a5e6e875e5530"
       }
     }
   },
   "Resources": {
     "LabEC2": {
       "Type": "AWS::EC2::Instance",
-      "DependsOn": ["LabVpc", "S3InstanceProfile"],
+      "DependsOn": ["LabVpc", "JenkinsInstanceProfile"],
       "Properties": {
         "ImageId": {
           "Fn::FindInMap": ["RegionMap", { "Ref": "AWS::Region" }, "micro"]
         },
         "InstanceType": { "Ref": "InstanceType" },
-        "IamInstanceProfile": { "Ref": "S3InstanceProfile" },
+        "IamInstanceProfile": { "Ref": "JenkinsInstanceProfile" },
+
         "KeyName": {
           "Ref": "KeyP"
         },
@@ -39,7 +41,8 @@
               "Fn::Join": [
                 ",",
                 [
-                  "My EC2 for ",
+                  "My",
+                  "EC2 for ",
                   { "Ref": "AWS::Region" },
                   " and for stack ",
                   { "Ref": "AWS::StackName" }
@@ -48,6 +51,7 @@
             }
           }
         ],
+
         "NetworkInterfaces": [
           {
             "AssociatePublicIpAddress": "true",
@@ -290,54 +294,165 @@
         "SubnetId": { "Ref": "LabSubnetPublic" }
       }
     },
-    "S3Role": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "Service": ["ec2.amazonaws.com"]
-              },
-              "Action": ["sts:AssumeRole"]
-            }
-          ]
-        },
-        "Path": "/",
-        "Policies": [
-          {
-            "PolicyName": "root",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Action": "s3:*",
-                  "Resource": [
-                    "arn:aws:s3:::your-s3-bucket-name",
-                    "arn:aws:s3:::your-s3-bucket-name/*"
-                  ]
-                }
-              ]
-            }
-          }
-        ]
-      }
+
+
+    "JenkinsRole": {
+  "Type": "AWS::IAM::Role",
+  "Properties": {
+    "AssumeRolePolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [{
+        "Effect": "Allow",
+        "Principal": { "Service": "ec2.amazonaws.com" },
+        "Action": "sts:AssumeRole"
+      }]
     },
-    "S3InstanceProfile": {
-      "Type": "AWS::IAM::InstanceProfile",
-      "DependsOn": "S3Role",
-      "Properties": {
-        "Path": "/",
-        "Roles": [
-          {
-            "Ref": "S3Role"
-          }
+    "ManagedPolicyArns": [
+      "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess",
+      "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+    ]
+  }
+},
+"JenkinsInstanceProfile": {
+  "Type": "AWS::IAM::InstanceProfile",
+  "DependsOn": "JenkinsRole",
+  "Properties": {
+    "Path": "/",
+    "Roles": [{ "Ref": "JenkinsRole" }]
+  }
+},
+
+"LabECSCluster": {
+  "Type": "AWS::ECS::Cluster",
+  "Properties": {
+    "ClusterName": {
+      "Fn::Join": ["-", ["lab-cluster", { "Ref": "AWS::StackName" }]]
+    }
+  }
+},
+
+"ECSTaskExecutionRole": {
+  "Type": "AWS::IAM::Role",
+  "Properties": {
+    "AssumeRolePolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [{
+        "Effect": "Allow",
+        "Principal": { "Service": "ecs-tasks.amazonaws.com" },
+        "Action": "sts:AssumeRole"
+      }]
+    },
+    "ManagedPolicyArns": [
+      "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+    ]
+  }
+},
+
+"LabLogGroup": {
+  "Type": "AWS::Logs::LogGroup",
+  "Properties": {
+    "LogGroupName": {
+      "Fn::Join": ["/", ["/ecs/lab", { "Ref": "AWS::StackName" }]]
+    },
+    "RetentionInDays": 7
+  }
+},
+
+"LabTaskDefinition": {
+  "Type": "AWS::ECS::TaskDefinition",
+  "DependsOn": ["ECSTaskExecutionRole", "LabLogGroup"],
+  "Properties": {
+    "Family": {
+      "Fn::Join": ["-", ["lab-task", { "Ref": "AWS::StackName" }]]
+    },
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": ["FARGATE"],
+    "Cpu": "256",
+    "Memory": "512",
+    "ExecutionRoleArn": { "Fn::GetAtt": ["ECSTaskExecutionRole", "Arn"] },
+    "ContainerDefinitions": [{
+      "Name": "lab-app",
+      "Image": "nginx:latest",
+      "Essential": true,
+      "PortMappings": [{
+        "ContainerPort": 5000,
+        "Protocol": "tcp"
+      }],
+      "LogConfiguration": {
+        "LogDriver": "awslogs",
+        "Options": {
+          "awslogs-group": {
+            "Fn::Join": ["/", ["/ecs/lab", { "Ref": "AWS::StackName" }]]
+          },
+          "awslogs-region": { "Ref": "AWS::Region" },
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }]
+  }
+},
+
+"FargateSG": {
+  "Type": "AWS::EC2::SecurityGroup",
+  "Properties": {
+    "GroupDescription": "Security group for Fargate tasks",
+    "VpcId": { "Ref": "LabVpc" },
+    "SecurityGroupIngress": [{
+      "IpProtocol": "tcp",
+      "CidrIp": "0.0.0.0/0",
+      "FromPort": 5000,
+      "ToPort": 5000
+    }],
+    "SecurityGroupEgress": [{
+      "IpProtocol": "-1",
+      "CidrIp": "0.0.0.0/0"
+    }]
+  }
+},
+
+"LabSubnetPublic2": {
+  "Type": "AWS::EC2::Subnet",
+  "Properties": {
+    "AvailabilityZone": "eu-west-2b",
+    "CidrBlock": "10.0.1.0/24",
+    "VpcId": { "Ref": "LabVpc" },
+    "MapPublicIpOnLaunch": true,
+    "Tags": [{ "Key": "Name", "Value": "LabSubnetPub2" }]
+  }
+},
+
+"PublicNACLRtAssoc2": {
+  "Type": "AWS::EC2::SubnetRouteTableAssociation",
+  "Properties": {
+    "RouteTableId": { "Ref": "LabRtPub" },
+    "SubnetId": { "Ref": "LabSubnetPublic2" }
+  }
+},
+
+"LabECSService": {
+  "Type": "AWS::ECS::Service",
+  "DependsOn": ["LabTaskDefinition", "LabECSCluster"],
+  "Properties": {
+    "ServiceName": {
+      "Fn::Join": ["-", ["lab-service", { "Ref": "AWS::StackName" }]]
+    },
+    "Cluster": { "Ref": "LabECSCluster" },
+    "TaskDefinition": { "Ref": "LabTaskDefinition" },
+    "DesiredCount": 1,
+    "LaunchType": "FARGATE",
+    "NetworkConfiguration": {
+      "AwsvpcConfiguration": {
+        "AssignPublicIp": "ENABLED",
+        "SecurityGroups": [{ "Ref": "FargateSG" }],
+        "Subnets": [
+          { "Ref": "LabSubnetPublic" },
+          { "Ref": "LabSubnetPublic2" }
         ]
       }
     }
+  }
+}
+
   },
   "Outputs": {
     "InstanceId": {
@@ -357,6 +472,23 @@
       "Value": {
         "Fn::GetAtt": ["LabEC2", "PublicDnsName"]
       }
-    }
+    },
+    "ECSClusterName": {
+  "Description": "Paste this into your Jenkinsfile as ECS_CLUSTER",
+  "Value": { "Ref": "LabECSCluster" }
+},
+"ECSServiceName": {
+  "Description": "Paste this into your Jenkinsfile as ECS_SERVICE",
+  "Value": { "Ref": "LabECSService" }
+},
+"JenkinsURL": {
+  "Description": "Jenkins is available at this address",
+  "Value": {
+    "Fn::Join": ["", ["http://", { "Fn::GetAtt": ["LabEC2", "PublicDnsName"] }, ":8080"]]
   }
+}
+  }, "ECRRepository": {
+  "Description": "Paste this into your Jenkinsfile as ECR_REPO",
+  "Value": { "Ref": "LabECR" }
+}
 }

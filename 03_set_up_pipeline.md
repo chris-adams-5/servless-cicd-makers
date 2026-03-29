@@ -158,14 +158,14 @@ To check you've got everything working correctly:
 
 A sample Jenkins pipeline script:
 
-```jenkins
+```
 pipeline {
     agent any
  environment {
         GIT_CREDENTIALS  = 'your-git-credentials-id'
         AWS_REGION       = 'eu-west-2'
         ECR_REPO         = 'YOUR_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/my-ai-app'
-        ECS_CLUSTER      = 'my-ai-cluster'
+        ECS_CLUSTER      = 'name'
         ECS_SERVICE      = 'my-ai-service'
         IMAGE_TAG        = "${BUILD_NUMBER}"
     }
