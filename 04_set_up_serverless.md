@@ -5,114 +5,107 @@
 Learn to:
 - Use AWS Lambda and API Gateway to build a Serverless API backend.
 
-## Task: Diagram the backend
+## Background
 
-> :warning: Before moving on to this task, make sure you have successfully
-> deployed the HTML files to the S3 Bucket. 
+ You were introduced to serverless containers last week with Fargate but this session will focus on another serverless AWS service - Lambda. 
 
-Now that automatic deployment of the static site works, the next task is to make
-it dynamic by building a backend to which the frontend site can make requests.
+With serverless, instead of running a whole container or virtual machine, you
+just tell AWS to run one specific function when it is called. AWS handles
+everything else — no servers to manage, no containers to configure.
 
-For this we're going to use AWS Lambda. This is a type of cloud platform called
-serverless, or functions-as-a-service (FaaS). Instead of starting a whole
-virtual computer, or a container, we just tell AWS to run one specific function
-when we tell it to.
+We'll use two AWS services together:
 
-We'll also use AWS API Gateway, which is a service that allows us to create an
-HTTP endpoint URL that will invoke (run) our Lambda function.
+**AWS Lambda** — runs your function in response to a trigger. You only pay for
+the time your function is actually running.
 
-Revisit your diagram again.
+**AWS API Gateway** — creates an HTTP endpoint URL that triggers your Lambda
+function when called. This is how the outside world can invoke your function
+over the internet.
 
-![Application diagram as shown in the README of this project](assets/application_diagram.jpg?raw=true "Application
-diagram")
+## Task: Diagram the architecture
 
-Can you flesh out your understanding of the connection between the static site,
-API Gateway and AWS Lambda?
+Before diving in, draw a diagram of how you think these two services connect.
+Consider:
 
-Where could you look to figure out what kind of requests and responses the
-arrows represent? Improve this diagram as you learn more.
+- What triggers the Lambda function?
+- What does the Lambda function return?
+- How does API Gateway sit between the caller and the function?
+
+Keep updating this diagram as you learn more.
 
 ## Task: Set up the Serverless backend
 
-Your task is to make the button in your `index.html` render some text on the
-page by setting it up to call an AWS Lambda function, and then displaying the
-response.
-
-You're welcome to work this through yourself, but I've broken down the key steps
-below.
+Your task is to deploy a Lambda function and expose it via API Gateway so it
+can be called over the internet.
 
 ## Key Steps
 
 1. **Create an AWS Lambda function.**  
-   You can find AWS Lambda in the AWS Console. Set it to use the Python runtime.
+   Find AWS Lambda in the AWS Console. Click **Create function**, select
+   **Author from scratch**, give it a name, and set the runtime to **Python 3.x**.
 
-2. **Copy in the code from `resources/your-first-lambda.py`.**  
-   You can find it in this repository, and copy it directly into the AWS Lambda
-   coding interface. You should see this after you've created the lambda, though
-   you may need to scroll down.
+2. **Copy in the code from `lambdas/your-first-lambda.py`.**  
+   You can find it in this repository. Copy it directly into the AWS Lambda
+   code editor. You may need to scroll down to find it after creating the function.
 
 3. **Deploy the Lambda function.**  
-   You can do this by clicking the 'Deploy' button in the top right. You'll need
-   to do this every time you make a change to the code.
+   Click the **Deploy** button. You will need to do this every time you make
+   a change to the code.
 
 4. **Test the Lambda function.**  
-   You can do this by clicking the 'Test' button in the top right. It will
-   prompt you to create an event. If you needed to give parameters to your
-   event, you would do it here. But we don't, so we won't — just create it.
+   Click the **Test** button. It will prompt you to create a test event — just
+   give it a name and create it without changing anything else, since this
+   function doesn't need any input parameters.
 
-   You can then click 'Test' again, and you should see the output of the
-   function.
+   Click **Test** again and you should see the function's output in the
+   results panel below.
 
 5. **Create an API Gateway endpoint.**  
-   This is another area of AWS. Select 'HTTP API', and then 'Lambda' as the
-   integration. Then you'll be able to select your Lambda function. After this,
-   make it a GET request and whatever path you'd like. Move through to create
-   it.
+   Go to API Gateway in the AWS Console. Select **HTTP API**, then **Lambda**
+   as the integration. Select your Lambda function, set the method to **GET**
+   and give it a path of your choice. Click through to create it.
 
 6. **Try it out manually.**  
-   Open up your terminal and call your new API endpoint. For me this was:
+   Find the **Invoke URL** on the API Gateway screen. Open your terminal and
+   call your endpoint:
 
    ```shell
-   ; curl https://4d45w6bn66.execute-api.eu-west-2.amazonaws.com/myCicdLambda
+   curl https://YOUR_API_ID.execute-api.eu-west-2.amazonaws.com/YOUR_ROUTE
    ```
 
-   You can find the domain under 'Invoke URL' and the route is the one you
-   specified earlier. If you need a reminder, you can go to 'Develop -> Routes'.
+   You can find the full route under **Develop → Routes** if you need a reminder.
+
+   You should see the response message from your Lambda function.
 
 7. **Set up CORS.**  
-   Browsers have security settings to prohibit websites from sending requests to
-   other websites. However they also have a mechanism to selectively allow this.
-   This is called CORS, or Cross-Origin Resource Sharing.
+   Browsers block requests from one origin to another by default. CORS (Cross
+   Origin Resource Sharing) is the mechanism that selectively allows this.
 
-   Go to Develop -> CORS -> Configure. 
-   
-   Under 'Access-Control-Allow-Origin' add the URL of your static site
-   (including the protocol, e.g.
-   `http://my-static-site.s3.eu-west-2.amazonaws.com`).
+   Go to **Develop → CORS → Configure** and set the following:
 
-   Under 'Access-Control-Allow-Methods' add `GET`, since that't the request type
-   we've set up our lambda to use.
+   - **Access-Control-Allow-Origin**: `*`
+   - **Access-Control-Allow-Methods**: `GET`
+   - **Access-Control-Allow-Headers**: `content-type`
 
-   Under 'Access-Control-Allow-Headers' add `content-type`, since our requester
-   will need to specify what types of responses it is expecting.
-
-   Then click 'Save'.
-
-8. **Update your `index.html` to call the lambda.**  
-   There's a space for the URL to your lambda in the `index.html` file. Replace
-   the placeholder with the URL of your API Gateway endpoint.
-
-   Assuming your CI-CD process is working smoothly, you can push your changes,
-   see it run, and then go visit the website.
+   Click **Save**.
 
 ## Check your work
 
-If you've done everything correctly, when you click the button on your website
-you should see the message from the lambda function come up and the picture
-change.
+You have done this correctly when:
 
-Well done! You've completed all the core material for this module.
+- Your Lambda function runs successfully when you click **Test** and you can
+  see the response in the results panel
+- When you call your API Gateway endpoint with `curl` you get the response
+  message back
+- You can paste the full endpoint URL into your browser and see the response
 
+Well done — you have now deployed both a containerised application with
+Fargate and a serverless function with Lambda. These are two of the most
+common ways to run code in the cloud, and you have used both in the same week.
+
+[Next Challenge](05_bonus.md)
+
+<!-- END GENERATED SECTION DO NOT EDIT -->
 
 [Next Challenge](05_bonus.md)
 

@@ -1,8 +1,0 @@
-{
-  "scripts": {
-    "check": "html-validate ."
-  },
-  "dependencies": {
-    "html-validate": "^7.16.0"
-  }
-}
