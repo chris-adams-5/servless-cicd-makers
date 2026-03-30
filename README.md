@@ -44,7 +44,7 @@ frontend should access AWS Lambda through a service called Amazon API Gateway.
 The next diagram illustrates how the application should be deployed:
 
 - The code for the app should be hosted on GitHub
-- Jenkins should be used to automatically deploy the application code to AWS S3.
+- Jenkins should be used to automatically deploy the application code to AWS fargate.
   
 ![Deployment process diagram](assets/deployment_process_diagram.png?raw=true
 "Deployment process diagram")
