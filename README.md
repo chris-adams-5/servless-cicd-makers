@@ -33,7 +33,7 @@ The following diagram shows how the application should work once deployed.
 diagram")
 
 The diagram shows that the app is composed of:
-- a static site hosted on S3 and accessible through the browser,
+- a python app container hosted on fargate and accessible through the browser,
 - and a backend which the site sends requests to.
 
 It also shows that the backend should be powered by AWS Lambda and that the
