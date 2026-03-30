@@ -31,7 +31,8 @@ containers. You tell it which image to run, how much CPU and memory to give it, 
 
 The relationship looks like this:
 
-[Create an image to show the ECR → ECS → Fargate relationship]
+
+[ECR → ECS → Fargate architectural relationship](assets/fargate_container_archi.png)
 
 ## Task: Set up a container hosting environment on ECS
 
@@ -44,9 +45,7 @@ You will need to do five key things:
 
 This will involve some research, feel free to consult your fargate resources from last week.
 
-Cloud documentation takes some careful reading,
-but if you want to be a professional cloud engineer there is no way around
-reading documentation — so while we will steer you, you'll need to do the
+Cloud documentation takes some careful reading, but if you want to be a professional cloud engineer there is no way around reading documentation — so while we will steer you, you'll need to do the
 research yourself too.
 
 ## Check your work
@@ -56,7 +55,7 @@ You'll know you've done this right when:
 1. Is your ECR repository visible in the ECR console?
 2. Is your cluster visible in the ECS console?
 3. Does your service show a desired task count of 1?
-4. Can you find the public IP of a running task and open it in a browser?
+
 
 The last point you won't be able to check until after the pipeline exercise — your ECR repository is currently empty, so ECS has no image to run yet. Come back to it once Jenkins has pushed an image.
 
