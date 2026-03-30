@@ -12,25 +12,25 @@ Learn:
 
 ## Task: Create a diagram of your desired pipeline
 
+You previously learned how Docker works and how to containerise an application. Now we're going to wire that into a CI-CD pipeline — so that every time you push code to GitHub, Jenkins will automatically build your Docker image, push it to a container registry, and deploy it to Fargate, a fully managed container platform on AWS.
+
+The application you'll be deploying is a Python Flask app that generates random quotes.
+
 Previously we mentioned how a CI-CD pipeline involves running tests and checks
 on our codebase, and then if those tests pass deploying the code to a production
 cloud environment.
 
-You previously learned how Docker works and how to containerise an application. Now we're going to wire that into a CI-CD pipeline — so that every time you push code to GitHub, Jenkins will automatically build your Docker image, push it to a container registry, and deploy it to Fargate, a fully managed container platform on AWS.
-
-The application you'll be deploying is a Python Flask app with a built-in AI assistant, powered by a small language model running inside your container — no external API keys required.
-
-<!-- These sorts of checks are a powerful way to improve quality in the systems in
+These sorts of checks are a powerful way to improve quality in the systems in
 our care, as they will run automatically and help our teams to catch issues
 before they get to production. The app not deploying is a pretty strong
-incentive to fix the problem! -->
+incentive to fix the problem! 
 
 Before we get started, take a moment to diagram out in more detail what this
 pipeline is going to have to do, and in what order.
 
 Here's a starting point:
 
-![Insert new diagarams](assets/deployment_process_diagram.png?raw=true
+![Overview of Deployment Diagram](assets/deployment_process_diagram.png?raw=true
 "Deployment process diagram")
 
 Copy out this diagram and add some detail to what Jenkins will need to do.
@@ -61,18 +61,12 @@ your own way.
    Why private? Public will make it easier, but you will be missing some key
    learning for this module, as most repositories in your jobs will be private.
 
-3. **Set up Amazon ECR (Elastic Container Registry)**
-ECR is AWS's Docker image registry — it's where Jenkins will push your built images, and where Fargate will pull them from.  
+3. **Create a new pipeline in Jenkins.**
 
-4. **Set up Amazon ECS + Fargate**
-In last week's task you had a look at ECS and Fargate, refer back to last week's notes as a reminder. 
-
-5. **Create a new pipeline in Jenkins.**
-
-6. **Add a pipeline script.**
+4. **Add a pipeline script.**
       This script should:
    
-   1. Clone your repository using the right credentials (more below)
+   1. Clone your repository using the right credentials.
    2. Build a Docker image from your Dockerfile
    3. Push the image to ECR
    4. Deploy the new image to your Fargate service
@@ -117,9 +111,9 @@ In last week's task you had a look at ECS and Fargate, refer back to last week's
 
 
 8. **Try running your pipeline.**
-      Go to your pipeline and click 'Build Now'. If everything's working right,
-   this should run 'Clone Repo' and 'Install Dependencies' successfully, and
-   then fail at 'Run HTML Check' with some errors about invalid HTML. 
+      Go to your pipeline and click 'Build Now'. 
+
+ If everything is set up correctly, the pipeline will run C'lone Repo' successfully, and then fail at Run Tests' stage.
    
    This is good — your check is properly failing and your pipeline is now
    failing.
@@ -131,9 +125,7 @@ In last week's task you had a look at ECS and Fargate, refer back to last week's
    `http://<public-ip>:5000` in your browser — you should see your Flask app
    running live.
 
-   > Note: the first time the container starts it needs to pull the AI model,
-   > which can take a few minutes. If the app isn't responding immediately,
-   > wait a moment and try again.
+
 
 10. **Set up a Github webhook.**
      Right now you need to run the CI-CD pipeline manually. Typically these
@@ -164,10 +156,10 @@ pipeline {
  environment {
         GIT_CREDENTIALS  = 'your-git-credentials-id'
         AWS_REGION       = 'eu-west-2'
-        ECR_REPO         = 'YOUR_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/my-ai-app'
-        ECS_CLUSTER      = 'name'
-        ECS_SERVICE      = 'my-ai-service'
-        IMAGE_TAG        = "${BUILD_NUMBER}"
+        ECR_REPO         = '{insert ecr repo }'
+        ECS_CLUSTER      = '{insert name of ecs cluster'
+        ECS_SERVICE      = '{insert name of ecs service}'
+    
     }
 
     stages {
@@ -177,18 +169,33 @@ pipeline {
             }
         }
 
+        stage('Install Dependencies') {
+    steps {
+        sh '''
+            pip3 install -r app/requirements.txt
+        '''
+    }
+}
+
+stage('Run Tests') {
+    steps {
+          sh 'python3 -m pytest app/tests/ -v'
+    }
+}
+
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $ECR_REPO:$IMAGE_TAG .'
+                sh 'docker build -t $ECR_REPO:latest .'
             }
         }
+
 
         stage('Push to ECR') {
             steps {
                 sh '''
                     aws ecr get-login-password --region $AWS_REGION | \
                     docker login --username AWS --password-stdin $ECR_REPO
-                    docker push $ECR_REPO:$IMAGE_TAG
+                    docker push $ECR_REPO:latest
                 '''
             }
         }
@@ -217,34 +224,6 @@ pipeline {
 }
 ```
 
-A sample policy for your User Group:
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-         {
-      "Effect": "Allow",
-      "Action": [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:PutImage",
-        "ecr:InitiateLayerUpload",
-        "ecr:UploadLayerPart",
-        "ecr:CompleteLayerUpload",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-        "ecs
-:UpdateService",
-        "ecs:DescribeServices",
-        "ecs:RegisterTaskDefinition",
-        "iam:PassRole"
-      ],
-      "Resource": "*"
-    }           
-    ]
-}
-```
 
 
 

@@ -1,33 +1,67 @@
-from flask import Flask, request, jsonify, render_template
-import requests
+from flask import Flask, jsonify, render_template, request
+import random
+import os
+import urllib.request
+import urllib.parse
+import json
 
 app = Flask(__name__)
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+quotes = [
+    {"quote": "The best way to get started is to quit talking and begin doing.", "author": "Walt Disney"},
+    {"quote": "The pessimist sees difficulty in every opportunity. The optimist sees opportunity in every difficulty.", "author": "Winston Churchill"},
+    {"quote": "Don't let yesterday take up too much of today.", "author": "Will Rogers"},
+    {"quote": "You learn more from failure than from success. Don't let it stop you.", "author": "Unknown"},
+    {"quote": "It's not whether you get knocked down, it's whether you get up.", "author": "Vince Lombardi"},
+    {"quote": "If you are working on something that you really care about, you don't have to be pushed. The vision pulls you.", "author": "Steve Jobs"},
+    {"quote": "People who are crazy enough to think they can change the world, are the ones who do.", "author": "Rob Siltanen"},
+    {"quote": "Failure will never overtake me if my determination to succeed is strong enough.", "author": "Og Mandino"},
+    {"quote": "We may encounter many defeats but we must not be defeated.", "author": "Maya Angelou"},
+    {"quote": "Knowing is not enough; we must apply. Wishing is not enough; we must do.", "author": "Johann Wolfgang Von Goethe"},
+    {"quote": "Imagine your life is perfect in every respect; what would it look like?", "author": "Brian Tracy"},
+    {"quote": "We generate fears while we sit. We overcome them by action.", "author": "Dr. Henry Link"},
+    {"quote": "Whether you think you can or think you can't, you're right.", "author": "Henry Ford"},
+    {"quote": "Security is mostly a superstition. Life is either a daring adventure or nothing.", "author": "Helen Keller"},
+    {"quote": "The man who has confidence in himself gains the confidence of others.", "author": "Hasidic Proverb"},
+]
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-@app.route("/ask", methods=["POST"])
-def ask():
-    data = request.get_json()
-    prompt = data.get("prompt", "")
+@app.route('/quotes')  
+def get_quote():
+    return jsonify(random.choice(quotes))
+
+@app.route('/lambda')
+def lambda_page():
+    return render_template('lambda.html')
+
+@app.route('/invoke-lambda', methods=['POST'])
+def invoke_lambda():
+    weather_url = os.environ.get('LAMBDA_WEATHER_URL', '')
+    time_url    = os.environ.get('LAMBDA_TIME_URL', '')
+
+    data  = request.get_json() or {}
+    skill = data.get('skill', 'weather')
+
+    if skill == 'time':
+        if not time_url:
+            return jsonify({"error": "LAMBDA_TIME_URL not set — complete the bonus exercise to enable this skill"}), 500
+        url = time_url
+    else:
+        if not weather_url:
+            return jsonify({"error": "LAMBDA_WEATHER_URL environment variable not set"}), 500
+        city = data.get('city', 'london')
+        url  = f"{weather_url}?city={urllib.parse.quote(city)}"
 
     try:
-        response = requests.post(OLLAMA_URL, json={
-            "model": "tinyllama",
-            "prompt": prompt,
-            "stream": False
-        }, timeout=60)
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as resp:
+            body = json.loads(resp.read().decode('utf-8'))
+        return jsonify({"response": body.get("message", body)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-        result = response.json()
-        return jsonify({"response": result.get("response", "No response received.")})
-
-    except requests.exceptions.ConnectionError:
-        return jsonify({"response": "AI model is still starting up. Please wait a moment and try again."}), 503
-    except requests.exceptions.Timeout:
-        return jsonify({"response": "The model took too long to respond. Please try again."}), 504
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

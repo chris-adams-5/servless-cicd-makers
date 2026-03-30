@@ -8,9 +8,10 @@ Learn to:
 - Set up a serverless container hosting environment using Fargate
 
 ## Background
-You will have to push changes to Github in order to trigger the CI/CD pipeline. Therefore, before going any further in this tutorial, copy the app directory and create this as a seperate private repository.
 
 Last week you learnt how to build Docker containers and run them on EC2 and Fargate. This week we will continue with that with a focus on building jenkins pipelines to automate the deployment of the containers
+
+You will have to push changes to Github in order to trigger the CI/CD pipeline. Therefore, before going any further in this tutorial, copy the app directory and create this as a seperate private repository.
 
 
 ## Preparing the Deployment Environment 

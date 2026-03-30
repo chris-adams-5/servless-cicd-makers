@@ -81,7 +81,7 @@ step. Share your diagram with a coach to get feedback.
 ## Done?
 
 In this project, you've discovered how to use some of the fundamental building
-blocks of AWS: EC2 instances and S3 buckets. You're likely to see these two AWS
+blocks of AWS: Fargate and CloudFormation. You're likely to see these two AWS
 services crop up in many a project, both in the course and in your future
 workplace.
 
