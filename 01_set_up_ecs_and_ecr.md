@@ -38,9 +38,9 @@ The relationship looks like this:
 
 You will need to do five key things:
 
-* Create an ECR repository to store your Docker images.
-* Create an ECS cluster.
-* Create a Task Definition describing your container.
+* Create an ECR repository to store your Docker images. ✅
+* Create an ECS cluster. ✅
+* Create a Task Definition describing your container. 
 * Create an ECS Service to keep your container running.
 
 This will involve some research, feel free to consult your fargate resources from last week.

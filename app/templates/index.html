@@ -115,6 +115,7 @@
             try {
                 const res = await fetch("/quote");
                 const data = await res.json();
+                console.log(data);
                 quoteText.textContent = `"${data.quote}"`;
                 quoteAuthor.textContent = `— ${data.author}`;
             } catch (err) {

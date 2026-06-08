@@ -1,0 +1,27 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "chris-fargate-app",
+      "image": "664047078509.dkr.ecr.eu-west-2.amazonaws.com/chris_a/ci-cd-project-1:latest",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true
+    }
+  ],
+  "family": "chris-fargate",
+  "executionRoleArn": "arn:aws:iam::664047078509:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+ 
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "tags": [{"owner": "chris"}]
+}
